@@ -10,20 +10,17 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import org.infinispan.util.logging.Log;
-import org.infinispan.util.logging.LogFactory;
+class CallResponseCache {
 
-public class CallResponseCache {
+    private ConcurrentMap<Reference, ConcurrentHashMap<UUID, Map<UUID, Object>>> responses = new ConcurrentHashMap<>();
 
-    private ConcurrentMap<Reference,ConcurrentHashMap<UUID, Map<UUID,Object>>> responses = new ConcurrentHashMap<>();
-
-    public boolean contains(Call call) {
+    boolean contains(Call call) {
         return responses.containsKey(call.getReference())
                 && responses.get(call.getReference()).containsKey(call.getCallerID())
                 && responses.get(call.getReference()).get(call.getCallerID()).containsKey(call.getCallID());
     }
 
-    public CallResponse get(Call call){
+    CallResponse get(Call call) {
         CallResponse response = null;
         if (responses.containsKey(call.getReference())) {
             if (responses.get(call.getReference()).containsKey(call.getCallerID())) {
@@ -36,7 +33,7 @@ public class CallResponseCache {
         return response;
     }
 
-    public void put(Call call, CallResponse response) {
+    void put(Call call, CallResponse response) {
         if (!responses.containsKey(call.getReference()))
             responses.putIfAbsent(call.getReference(), new ConcurrentHashMap<>());
 
@@ -51,11 +48,11 @@ public class CallResponseCache {
     /**
      * Assumed to be sequentially executed.
      */
-    public void clearAll(){
+    void clearAll() {
         responses.clear();
     }
 
-   public void clear(Call call){
+    void clear(Call call) {
         if (responses.containsKey(call.getReference())) {
             responses.get(call.getReference()).clear();
         }

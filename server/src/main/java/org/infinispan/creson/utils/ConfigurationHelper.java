@@ -4,10 +4,13 @@ import org.infinispan.configuration.cache.CacheMode;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.cache.Index;
 import org.infinispan.configuration.cache.SingleFileStoreConfigurationBuilder;
+import org.infinispan.configuration.global.GlobalConfigurationBuilder;
 import org.infinispan.creson.Factory;
 import org.infinispan.creson.server.StateMachineInterceptor;
 import org.infinispan.interceptors.impl.CallInterceptor;
+import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
+import org.infinispan.test.AbstractCacheTest;
 import org.infinispan.transaction.TransactionMode;
 
 import static org.infinispan.creson.Factory.CRESON_CACHE_NAME;
@@ -16,6 +19,26 @@ import static org.infinispan.creson.Factory.CRESON_CACHE_NAME;
  * @author Pierre Sutra
  */
 public class ConfigurationHelper {
+    private static EmbeddedCacheManager cacheManager;
+
+    public static EmbeddedCacheManager getCacheManager(){
+        if (cacheManager == null){
+            throw new NullPointerException("Cache manager not created.");
+        }
+        return cacheManager;
+    }
+
+    public static void setUpManager(String host) {
+        GlobalConfigurationBuilder gbuilder = GlobalConfigurationBuilder.defaultClusteredBuilder();
+        gbuilder.transport().clusterName("composer-store-cluster");
+        gbuilder.transport().nodeName("composer-store-server-" + host);
+        gbuilder.transport().addProperty("configurationFile", "jgroups.xml");
+
+        ConfigurationBuilder cBuilder
+                = AbstractCacheTest.getDefaultClusteredCacheConfig(CacheMode.DIST_ASYNC, false);
+
+        cacheManager = new DefaultCacheManager(gbuilder.build(), cBuilder.build(), true);
+    }
 
     public static void installCreson(
             EmbeddedCacheManager manager,
@@ -33,7 +56,7 @@ public class ConfigurationHelper {
         ConfigurationBuilder builder = new ConfigurationBuilder();
         builder.clustering().cacheMode(mode);
         builder.transaction().transactionMode(TransactionMode.NON_TRANSACTIONAL);
-        builder.compatibility().enabled(true); // for HotRod
+//        builder.compatibility().enabled(true); // for HotRod
         builder.expiration().lifespan(-1);
         builder.memory().size(maxEntries);
 
@@ -68,9 +91,8 @@ public class ConfigurationHelper {
         }
 
         // installation
-        manager.defineConfiguration(CRESON_CACHE_NAME,builder.build());
-        stateMachineInterceptor.setup(Factory.forCache(manager.getCache(CRESON_CACHE_NAME)),withIdempotence);
-
+        manager.defineConfiguration(CRESON_CACHE_NAME, builder.build());
+        stateMachineInterceptor.setup(Factory.forCache(manager.getCache(CRESON_CACHE_NAME)), withIdempotence);
     }
 
 }

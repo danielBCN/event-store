@@ -18,10 +18,13 @@
   </Appenders>
 
   <Loggers>
+    <Logger name="eu.cloudbutton" level="TRACE">
+      <AppenderRef ref="STDOUT"/>
+    </Logger>
     <Logger name="org.infinispan" level="INFO"/>
     <Logger name="org.infinispan.creson" level="INFO"/>
     <Logger name="org.jgroups" level="INFO"/>
-    <Logger name="org.infinispan.server.hotrod" level="ERROR"/>
+    <Logger name="org.jboss.logging" level="INFO"/>
     <Logger name="org.infinispan.commons.test.TestNGTestListener" level="ERROR"/>
 
     <Root level="INFO">

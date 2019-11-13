@@ -1,22 +1,27 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.infinispan</groupId>
-    <artifactId>infinispan-creson</artifactId>
+    <artifactId>composer-store</artifactId>
     <version>9.4.16.Final</version>
-    <name>infinispan-creson</name>
+    <name>composer-event-store</name>
     <packaging>pom</packaging>
-    <description>Implementation of the CRESON framework on top of Infinispan.</description>
+    <description>Event store for CloudButton Composer.
+    </description>
 
     <properties>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <skipTests>true</skipTests>
+
         <version.apache.felix.plugin>3.5.1</version.apache.felix.plugin>
-        <version.guava>18.0</version.guava>
+        <version.guava>28.1-jre</version.guava>
         <version.java-uuid-generator>3.1.3</version.java-uuid-generator>
         <version.javax-persistance-api>2.2</version.javax-persistance-api>
         <version.aspectjrt>1.8.9</version.aspectjrt>
@@ -24,15 +29,26 @@
         <version.args4j>2.32</version.args4j>
         <version.javassist>3.23.1-GA</version.javassist>
         <version.testng>6.14.3</version.testng>
-        <version.io-kubernetes-client-java>4.0.0</version.io-kubernetes-client-java>
+        <version.io-kubernetes-client-java>4.0.0
+        </version.io-kubernetes-client-java>
         <log4j.configurationFile>log4j2.xml</log4j.configurationFile>
+
+        <grpc.version>1.25.0</grpc.version>
+        <os.plugin.version>1.5.0.Final</os.plugin.version>
+        <protobuf.plugin.version>0.6.1</protobuf.plugin.version>
+        <protoc.version>3.5.1</protoc.version>
     </properties>
 
     <developers>
-        <developer>
+        <developer> <!--CRESON-->
             <name>Pierre Sutra</name>
             <organization>Télécom SudParis</organization>
             <organizationUrl>https://github.com/otrack</organizationUrl>
+        </developer>
+        <developer>
+            <name>Daniel Barcelona</name>
+            <organization>Universitat Rovira i Virgili</organization>
+            <organizationUrl>https://github.com/danielBCN</organizationUrl>
         </developer>
     </developers>
 
@@ -46,15 +62,10 @@
 
         <dependencies>
 
+            <!--INFINISPAN-->
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>infinispan-core</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>${project.groupId}</groupId>
-                <artifactId>infinispan-client-hotrod</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
@@ -64,6 +75,20 @@
                 <version>${project.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>infinispan-commons-test</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>infinispan-core</artifactId>
+                <version>${project.version}</version>
+                <type>test-jar</type>
+            </dependency>
+
+            <!--JAVA UTILS-->
             <dependency>
                 <groupId>org.javassist</groupId>
                 <artifactId>javassist</artifactId>
@@ -88,26 +113,12 @@
                 <version>${version.javax-persistance-api}</version>
             </dependency>
 
-
             <dependency>
                 <groupId>org.aspectj</groupId>
                 <artifactId>aspectjrt</artifactId>
                 <version>${version.aspectjrt}</version>
             </dependency>
 
-            <!-- fixme -->
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-api</artifactId>
-                <version>1.7.7</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-simple</artifactId>
-                <version>1.7.7</version>
-            </dependency>
-	    
             <dependency>
                 <groupId>args4j</groupId>
                 <artifactId>args4j</artifactId>
@@ -115,33 +126,29 @@
             </dependency>
 
             <dependency>
-                <groupId>${project.groupId}</groupId>
-                <artifactId>infinispan-server-hotrod</artifactId>
-                <version>${project.version}</version>
+                <groupId>com.google.code.gson</groupId>
+                <artifactId>gson</artifactId>
+                <version>2.8.5</version>
             </dependency>
 
+            <!-- gRPC -->
             <dependency>
-                <groupId>${project.groupId}</groupId>
-                <artifactId>infinispan-server-hotrod</artifactId>
-                <version>${project.version}</version>
-                <type>test-jar</type>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-netty-shaded</artifactId>
+                <version>${grpc.version}</version>
             </dependency>
-
             <dependency>
-                <groupId>${project.groupId}</groupId>
-                <artifactId>infinispan-commons-test</artifactId>
-                <version>${project.version}</version>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-protobuf</artifactId>
+                <version>${grpc.version}</version>
             </dependency>
-
             <dependency>
-                <groupId>${project.groupId}</groupId>
-                <artifactId>infinispan-core</artifactId>
-                <version>${project.version}</version>
-                <type>test-jar</type>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-stub</artifactId>
+                <version>${grpc.version}</version>
             </dependency>
 
             <!-- TEST -->
-
             <dependency>
                 <groupId>org.testng</groupId>
                 <artifactId>testng</artifactId>
@@ -150,31 +157,70 @@
             </dependency>
 
         </dependencies>
-
     </dependencyManagement>
 
-    <profiles>
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>kr.motd.maven</groupId>
+                    <artifactId>os-maven-plugin</artifactId>
+                    <version>${os.plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.xolstice.maven.plugins</groupId>
+                    <artifactId>protobuf-maven-plugin</artifactId>
+                    <version>${protobuf.plugin.version}</version>
+                    <configuration>
+                        <protocArtifact>
+                            com.google.protobuf:protoc:${protoc.version}:exe:${os.detected.classifier}
+                        </protocArtifact>
+                        <pluginId>grpc-java</pluginId>
+                        <pluginArtifact>
+                            io.grpc:protoc-gen-grpc-java:${grpc.version}:exe:${os.detected.classifier}
+                        </pluginArtifact>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>compile</goal>
+                                <goal>compile-custom</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
 
+    <profiles>
         <profile>
             <id>creson</id>
-            <activation><activeByDefault>true</activeByDefault></activation>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
             <properties>
                 <defaultTestGroup>creson</defaultTestGroup>
-                <defaultExcludedTestGroup>unstable,extra,stress</defaultExcludedTestGroup>
-                <infinispan.test.jgroups.protocol>tcp</infinispan.test.jgroups.protocol>
+                <defaultExcludedTestGroup>unstable,extra,stress
+                </defaultExcludedTestGroup>
+                <infinispan.test.jgroups.protocol>tcp
+                </infinispan.test.jgroups.protocol>
             </properties>
         </profile>
 
         <profile>
             <id>creson-stress</id>
-            <activation><activeByDefault>false</activeByDefault></activation>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
             <properties>
                 <defaultTestGroup>creson,stress</defaultTestGroup>
-                <defaultExcludedTestGroup>unstable,extra</defaultExcludedTestGroup>
-                <infinispan.test.jgroups.protocol>tcp</infinispan.test.jgroups.protocol>
+                <defaultExcludedTestGroup>unstable,extra
+                </defaultExcludedTestGroup>
+                <infinispan.test.jgroups.protocol>tcp
+                </infinispan.test.jgroups.protocol>
             </properties>
         </profile>
-
     </profiles>
 
 </project>

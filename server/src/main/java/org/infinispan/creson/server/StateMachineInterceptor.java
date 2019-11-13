@@ -32,11 +32,14 @@ public class StateMachineInterceptor extends ClusteringInterceptor {
     private CallResponseCache responseCache = new CallResponseCache();
     private boolean withIdempotence;
 
+    public void setup(Factory factory, boolean useIdempotence) {
+        this.factory = factory;
+        this.withIdempotence = useIdempotence;
+    }
+
     @Override
     public java.lang.Object visitClearCommand(InvocationContext ctx, ClearCommand command) throws Throwable {
-
         log.trace(" Clearing all");
-
         responseCache.clearAll();
         return super.visitClearCommand(ctx, command);
     }
@@ -53,26 +56,23 @@ public class StateMachineInterceptor extends ClusteringInterceptor {
         Call call = (Call) command.getValue();
 
         Reference reference = call.getReference();
-        CallResponse response;
         Object object = ctx.lookupEntry(reference).getValue();
 
         // FIXME elasticity
         // assert (call instanceof CallConstruct) | (object!=null);
 
         if (log.isTraceEnabled()) {
-            log.trace(" Rcv [" + call.toString() + ", key=" + reference+", call=" + call.getCallID() + "["+responseCache.contains(call)+"], caller=" + call.getCallerID() + "]");
+            log.trace(" Rcv [" + call.toString() + ", key=" + reference +
+                    ", call=" + call.getCallID() + "[" + responseCache.contains(call) +
+                    "], caller=" + call.getCallerID() + "]");
         }
 
-        response = new CallResponse(reference ,call);
+        CallResponse response = new CallResponse(reference, call);
 
         if (withIdempotence && responseCache.contains(call)) {
-
             return responseCache.get(call);
-
         } else {
-
             try {
-
                 ContextManager.set(
                         new Context(
                                 call.getCallerID(),
@@ -82,12 +82,11 @@ public class StateMachineInterceptor extends ClusteringInterceptor {
                                 factory));
 
                 if (call instanceof CallInvoke) {
-
                     CallInvoke invocation = (CallInvoke) call;
 
                     // FIXME elasticity
                     // assert (object != null);
-                    if (object == null ) {
+                    if (object == null) {
                         object = Reflection.open(reference, new Object[0]);
                     }
 
@@ -96,52 +95,41 @@ public class StateMachineInterceptor extends ClusteringInterceptor {
                     java.lang.Object result;
 
                     try {
-
                         synchronized (object) { // synchronization contract
                             result = callObject(object, invocation.method, args);
                         }
-
                         response.setResult(result);
-
                     } catch (Throwable e) {
                         response.setResult(e);
                     }
-
-
                 } else if (call instanceof CallConstruct) {
-
                     CallConstruct callConstruct = (CallConstruct) call;
 
                     if (object == null | callConstruct.getForceNew()) {
-
                         if (log.isTraceEnabled())
                             log.trace(" New [" + reference + "]");
 
                         object = Reflection.open(reference, callConstruct.getInitArgs());
                         if (withIdempotence) responseCache.clear(call);
-
                     }
-
                     response.setResult(null);
-
                 }
-
-            } catch (Exception e) {
+            } catch (Exception e) { //??
                 throw e;
             }
-
         } // end compute return value
 
         // save return value
-        if (withIdempotence) responseCache.put(call,response);
+        if (withIdempotence) responseCache.put(call, response);
 
         // save state if required
         if (hasReadOnlyMethods(reference.getClazz())) { // FIXME state = byte array
             synchronized (object) { // synchronization contract
-                byte[] buf = marshall(object);
+                byte[] buf = marshall(object);          // marshall/unmarshall just to check if marshallable???
                 response.setState(unmarshall(buf));
                 if (log.isTraceEnabled()) {
-                    log.trace(" keeping state "+buf.length+"B");
+                    assert buf != null;
+                    log.trace(" keeping state " + buf.length + "B");
                 }
             }
         }
@@ -155,15 +143,10 @@ public class StateMachineInterceptor extends ClusteringInterceptor {
         invokeNext(ctx, clone);
 
         if (log.isTraceEnabled()) {
-            log.trace(" Executed [" + call.toString() + "] = "+response.toString());
+            log.trace(" Executed [" + call.toString() + "] = " + response.toString());
         }
 
         return response;
-    }
-
-    public void setup(Factory factory, boolean useIdempotence){
-        this.factory = factory;
-        this.withIdempotence = useIdempotence;
     }
 
     // utils

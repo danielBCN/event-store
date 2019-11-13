@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package eu.cloudbutton.composer.grpc;
+
+// Interface exported by the server.
+service EventStoreService {
+    // Store a new event.
+    rpc AddEvent (EventDef) returns (OK);
+
+    // Register a new conditional trigger.
+    rpc RegisterTrigger (TriggerDef) returns (OK);
+}
+
+// New events are contained in a JSON serialized string.
+message EventDef {
+    // JSON-formatted event.
+    bytes event = 1;
+}
+
+// Triggers definitions specify conditions on incoming events, to trigger
+// new events (definitions are serialized in a JSON string).
+message TriggerDef {
+    // JSON-formatted trigger definition.
+    bytes trigger = 1;
+}
+
+// A response contains the result of a call.
+message OK {
+    // JSON-formatted method return.
+    bool result = 1;
+}
